@@ -50,6 +50,7 @@
     }
 
     .toolbar,
+    .options-shell,
     .options-bar {
       display: flex;
       flex-wrap: wrap;
@@ -176,11 +177,52 @@
       border-radius: 999px;
     }
 
+    .options-shell {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    .options-toggle {
+      width: fit-content;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .options-arrow {
+      display: inline-block;
+      transition: transform .15s ease;
+    }
+
+    .options-arrow.open {
+      transform: rotate(90deg);
+    }
+
+    .add-row-btn {
+      border: 0;
+      background: transparent;
+      color: var(--teal-dark);
+      font: 700 14px var(--font);
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .add-row-btn:hover {
+      text-decoration: underline;
+    }
+
+    .chart-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      min-width: 0;
+    }
+
     .stage {
       background: #fff;
       border-radius: 16px;
       padding: 4px;
-      overflow-x: auto;
+      overflow: hidden;
     }
 
     .gantt-wrap {
@@ -501,8 +543,7 @@
       font-size: 13px;
     }
 
-    .mode-image .toolbar,
-    .mode-image .options-bar,
+    .mode-image .options-shell,
     .mode-image .edit-only {
       display: none !important;
     }
@@ -566,6 +607,7 @@
         end: true,
         progress: true
       },
+      optionsExpanded: false,
       tasks: [
         {
           id: uid(),
@@ -664,53 +706,57 @@
       const chartWidth = timeData.units.length * UNIT_WIDTH[state.granularity];
 
       app.innerHTML = `
-        <div class="toolbar edit-only">
+        <div class="toolbar">
           <div class="toolbar-group">
             <button class="btn ${state.mode === 'edit' ? 'active' : ''}" data-action="set-mode" data-mode="edit">Modo edición</button>
             <button class="btn ${state.mode === 'image' ? 'active' : ''}" data-action="set-mode" data-mode="image">Modo imagen</button>
-            <button class="btn primary" data-action="add-task">Añadir tarea</button>
-            <button class="btn" data-action="add-milestone">Añadir hito</button>
           </div>
-          <div class="toolbar-group help-inline">
+          <div class="toolbar-group help-inline ${state.mode === 'edit' ? '' : 'edit-only'}">
             Arrastra una tarea desde el asa ⋮⋮ para reordenarla.
           </div>
         </div>
 
-        <div class="options-bar edit-only">
-          <div class="options-group">
-            <span class="mini-label">Calendario</span>
-            <span class="inline-date-range">
-              <input type="text" value="${escapeAttr(formatDate(state.viewStart, state.locale))}" data-setting="viewStart" aria-label="Inicio del calendario" />
-              <span>→</span>
-              <input type="text" value="${escapeAttr(formatDate(state.viewEnd, state.locale))}" data-setting="viewEnd" aria-label="Fin del calendario" />
-            </span>
-            <select class="select" data-setting="granularity" aria-label="Granularidad">
-              <option value="week" ${state.granularity === 'week' ? 'selected' : ''}>Semana</option>
-              <option value="day" ${state.granularity === 'day' ? 'selected' : ''}>Día</option>
-            </select>
-            <label class="toggle-pill"><input type="checkbox" data-setting="showMonthYear" ${state.showMonthYear ? 'checked' : ''}/> Mostrar año en meses</label>
-          </div>
+        <div class="options-shell edit-only">
+          <button class="btn options-toggle" data-action="toggle-options">
+            <span class="options-arrow ${state.optionsExpanded ? 'open' : ''}">▶</span>
+            <span>Opciones</span>
+          </button>
+          <div class="options-bar" style="display:${state.optionsExpanded ? 'flex' : 'none'};">
+            <div class="options-group">
+              <span class="mini-label">Calendario</span>
+              <span class="inline-date-range">
+                <input type="text" value="${escapeAttr(formatDate(state.viewStart, state.locale))}" data-setting="viewStart" aria-label="Inicio del calendario" />
+                <span>→</span>
+                <input type="text" value="${escapeAttr(formatDate(state.viewEnd, state.locale))}" data-setting="viewEnd" aria-label="Fin del calendario" />
+              </span>
+              <select class="select" data-setting="granularity" aria-label="Granularidad">
+                <option value="week" ${state.granularity === 'week' ? 'selected' : ''}>Semana</option>
+                <option value="day" ${state.granularity === 'day' ? 'selected' : ''}>Día</option>
+              </select>
+              <label class="toggle-pill"><input type="checkbox" data-setting="showMonthYear" ${state.showMonthYear ? 'checked' : ''}/> Mostrar año en meses</label>
+            </div>
 
-          <div class="options-group">
-            <span class="mini-label">Meses</span>
-            <label class="chip">Color 1 <input class="color-swatch" type="color" value="${escapeAttr(state.monthColors[0])}" data-setting="monthColor0" /></label>
-            <label class="chip">Color 2 <input class="color-swatch" type="color" value="${escapeAttr(state.monthColors[1])}" data-setting="monthColor1" /></label>
-            <label class="chip">Fechas completadas <input class="color-swatch" type="color" value="${escapeAttr(state.completedDateColor)}" data-setting="completedDateColor" /></label>
-          </div>
+            <div class="options-group">
+              <span class="mini-label">Meses</span>
+              <label class="chip">Color 1 <input class="color-swatch" type="color" value="${escapeAttr(state.monthColors[0])}" data-setting="monthColor0" /></label>
+              <label class="chip">Color 2 <input class="color-swatch" type="color" value="${escapeAttr(state.monthColors[1])}" data-setting="monthColor1" /></label>
+              <label class="chip">Fechas completadas <input class="color-swatch" type="color" value="${escapeAttr(state.completedDateColor)}" data-setting="completedDateColor" /></label>
+            </div>
 
-          <div class="options-group">
-            <span class="mini-label">Columnas visibles en imagen</span>
-            ${Object.keys(COLUMN_META).map((key) => `
-              <label class="toggle-pill"><input type="checkbox" data-column-toggle="${key}" ${state.imageColumns[key] ? 'checked' : ''}/> ${COLUMN_META[key].label}</label>
-            `).join('')}
+            <div class="options-group">
+              <span class="mini-label">Columnas visibles en imagen</span>
+              ${Object.keys(COLUMN_META).map((key) => `
+                <label class="toggle-pill"><input type="checkbox" data-column-toggle="${key}" ${state.imageColumns[key] ? 'checked' : ''}/> ${COLUMN_META[key].label}</label>
+              `).join('')}
+            </div>
           </div>
         </div>
 
         <div class="stage">
           <div class="gantt-wrap">
-            <div class="gantt" id="ganttRoot" style="grid-template-columns: ${leftWidth > 0 ? `${leftWidth}px` : '0px'} ${chartWidth}px;">
+            <div class="gantt" id="ganttRoot" style="grid-template-columns: ${leftWidth > 0 ? `${leftWidth}px` : '0px'} minmax(0, 1fr);">
               ${leftWidth > 0 ? buildLeftTableHtml(visibleColumns) : '<div class="left-table" style="width:0"></div>'}
-              ${buildRightChartHtml(timeData)}
+              <div class="chart-scroll">${buildRightChartHtml(timeData, chartWidth)}</div>
             </div>
           </div>
         </div>
@@ -733,6 +779,7 @@
             `).join('')}
           </div>
           ${state.tasks.map((task, index) => buildLeftRowHtml(task, index, visibleColumns, columnsTemplate)).join('')}
+          ${state.mode === 'edit' ? buildAddRowHtml(visibleColumns, columnsTemplate) : ''}
         </div>
       `;
     }
@@ -763,7 +810,7 @@
                   <option value="milestone" ${task.type === 'milestone' ? 'selected' : ''}>Hito</option>
                 </select>
                 <button class="tiny-btn ${task.completed ? 'is-on' : ''}" data-toggle-complete="${index}" title="Marcar completada">✓</button>
-                <button class="tiny-btn delete-btn" data-delete-task="${index}" title="Eliminar">✕</button>
+                <button class="tiny-btn delete-btn" data-delete-task="${index}" title="Eliminar">Borrar</button>
               </div>
             </div>
           `;
@@ -801,13 +848,26 @@
       return '';
     }
 
-    function buildRightChartHtml(timeData) {
+    function buildAddRowHtml(visibleColumns, columnsTemplate) {
+      return `
+        <div class="left-row last" style="grid-template-columns:${columnsTemplate};">
+          ${visibleColumns.map((key) => {
+            if (key === 'task') {
+              return `<div class="cell task"><button class="add-row-btn" data-action="add-task">+ Añadir tarea</button></div>`;
+            }
+            return '<div class="cell"></div>';
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function buildRightChartHtml(timeData, chartWidth) {
       const unitWidth = UNIT_WIDTH[state.granularity];
       const gridTemplate = `repeat(${timeData.units.length}, ${unitWidth}px)`;
       const rowsTemplate = `repeat(${state.tasks.length}, var(--row-h))`;
 
       return `
-        <div class="right-chart">
+        <div class="right-chart" style="width:${chartWidth}px;">
           <div class="months" style="grid-template-columns:${gridTemplate};">
             ${timeData.months.map((month) => `
               <div class="month-block" style="grid-column:${month.start + 1} / span ${month.span}; background:${month.color};">${escapeHtml(month.label)}</div>
@@ -939,10 +999,9 @@
         });
       });
 
-      const addTaskBtn = app.querySelector('[data-action="add-task"]');
-      if (addTaskBtn) {
+      app.querySelectorAll('[data-action="add-task"]').forEach((addTaskBtn) => {
         addTaskBtn.addEventListener('click', () => {
-          const baseDate = state.tasks[0]?.start || state.viewStart;
+          const baseDate = state.tasks[state.tasks.length - 1]?.end || state.viewStart;
           state.tasks.push({
             id: uid(),
             task: 'Nova tasca',
@@ -955,22 +1014,12 @@
           });
           render();
         });
-      }
+      });
 
-      const addMilestoneBtn = app.querySelector('[data-action="add-milestone"]');
-      if (addMilestoneBtn) {
-        addMilestoneBtn.addEventListener('click', () => {
-          const baseDate = state.tasks[state.tasks.length - 1]?.end || state.viewStart;
-          state.tasks.push({
-            id: uid(),
-            task: 'Nou hito',
-            start: baseDate,
-            end: baseDate,
-            progress: 100,
-            completed: false,
-            type: 'milestone',
-            color: '#ff5a4d'
-          });
+      const toggleOptionsBtn = app.querySelector('[data-action="toggle-options"]');
+      if (toggleOptionsBtn) {
+        toggleOptionsBtn.addEventListener('click', () => {
+          state.optionsExpanded = !state.optionsExpanded;
           render();
         });
       }
@@ -1195,6 +1244,7 @@
       }
       state.granularity = state.granularity === 'day' ? 'day' : 'week';
       state.mode = state.mode === 'image' ? 'image' : 'edit';
+      state.optionsExpanded = Boolean(state.optionsExpanded);
       state.completedDateColor = normalizeColor(state.completedDateColor || '#1c9b42');
       state.monthColors = [normalizeColor(state.monthColors[0]), normalizeColor(state.monthColors[1])];
       Object.keys(COLUMN_META).forEach((key) => {
