@@ -3,59 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gantt estilo captura</title>
+  <title>Editor Gantt visual</title>
   <style>
     :root {
       --bg: #ffffff;
       --panel: #f7f7f7;
-      --text: #242424;
-      --muted: #5c5c5c;
+      --text: #232323;
+      --muted: #666;
       --border: #e7e7e7;
-      --grid: #ececec;
+      --grid: #ededed;
       --teal: #12a8c9;
       --teal-dark: #0e5674;
-      --bar-red: #ff5a4d;
-      --bar-yellow: #f7bd3c;
       --row-h: 56px;
       --months-h: 36px;
-      --weeks-h: 36px;
-      --week-w: 46px;
+      --scale-h: 36px;
       --radius: 8px;
-      --left-w-task: 285px;
-      --left-w-date: 112px;
-      --left-total: calc(var(--left-w-task) + var(--left-w-date) + var(--left-w-date));
-      --chart-w: auto;
       --shadow: 0 0 0 1px rgba(0,0,0,0.02);
       --font: Arial, Helvetica, sans-serif;
+      --completed-date-color: #1c9b42;
+      --week-w: 46px;
+      --day-w: 34px;
+      --left-w-task: 290px;
+      --left-w-date: 112px;
+      --left-w-progress: 96px;
     }
 
     * { box-sizing: border-box; }
 
-    body {
+    html, body {
       margin: 0;
+      min-height: 100%;
       background: var(--bg);
       color: var(--text);
       font-family: var(--font);
-      padding: 26px;
+    }
+
+    body {
+      padding: 20px;
     }
 
     .app {
-      max-width: 1280px;
+      max-width: 1450px;
       margin: 0 auto;
       display: grid;
-      gap: 16px;
+      gap: 14px;
+    }
+
+    .toolbar,
+    .options-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
     }
 
     .toolbar {
+      justify-content: space-between;
+    }
+
+    .toolbar-group,
+    .options-group {
       display: flex;
-      gap: 10px;
-      align-items: center;
       flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
     }
 
     .btn {
       appearance: none;
-      border: 1px solid #d7d7d7;
+      border: 1px solid #d9d9d9;
       background: #fff;
       color: #1f1f1f;
       padding: 10px 14px;
@@ -71,64 +92,88 @@
       border-color: var(--teal);
       color: #fff;
     }
-    .btn.primary:hover { filter: brightness(.98); }
-
-    .tip {
-      color: var(--muted);
-      font-size: 13px;
+    .btn.active {
+      background: var(--teal-dark);
+      border-color: var(--teal-dark);
+      color: #fff;
     }
 
-    .config {
+    .chip,
+    .select,
+    .tiny-btn,
+    .mini-input,
+    .inline-date-range,
+    .toggle-pill {
+      border: 1px solid #dcdcdc;
+      border-radius: 10px;
       background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px;
-      box-shadow: var(--shadow);
+      color: #262626;
+      font: 600 13px var(--font);
+      min-height: 38px;
     }
 
-    .config.hidden { display: none; }
-
-    .config summary {
-      cursor: pointer;
-      font-weight: 700;
-      list-style: none;
-      user-select: none;
-    }
-
-    .config summary::-webkit-details-marker { display: none; }
-
-    .config .summary-line {
-      display: flex;
+    .chip {
+      padding: 9px 12px;
+      display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      gap: 8px;
     }
 
-    .config .summary-line span:last-child {
+    .select {
+      padding: 0 12px;
+      min-width: 110px;
+    }
+
+    .toggle-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+    }
+
+    .toggle-pill input { accent-color: var(--teal); }
+
+    .mini-label {
+      font-size: 12px;
       color: var(--muted);
-      font-size: 13px;
-      font-weight: 400;
-    }
-
-    textarea {
-      width: 100%;
-      min-height: 260px;
-      resize: vertical;
-      margin-top: 14px;
-      border: 1px solid #d6d6d6;
-      border-radius: 12px;
-      padding: 14px;
-      font: 14px/1.45 Consolas, Monaco, 'Courier New', monospace;
-      background: #fbfbfb;
-      color: #1f1f1f;
-    }
-
-    .error {
-      display: none;
-      margin-top: 10px;
-      color: #c1372d;
-      font-size: 14px;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .inline-date-range {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+    }
+
+    .inline-date-range input {
+      width: 114px;
+      border: 0;
+      background: transparent;
+      font: 700 13px var(--font);
+      color: #242424;
+      outline: none;
+      text-align: center;
+    }
+
+    .color-swatch,
+    .head-color-input,
+    .task-color-input {
+      width: 26px;
+      height: 26px;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch,
+    input[type="color"]::-moz-color-swatch {
+      border: 1px solid rgba(0,0,0,0.12);
+      border-radius: 999px;
     }
 
     .stage {
@@ -144,48 +189,55 @@
 
     .gantt {
       display: grid;
-      grid-template-columns: var(--left-total) auto;
       align-items: start;
       gap: 18px;
       min-width: fit-content;
     }
 
-    /* LEFT TABLE */
     .left-table {
-      width: var(--left-total);
       display: grid;
-      grid-template-columns: var(--left-w-task) var(--left-w-date) var(--left-w-date);
       align-content: start;
     }
 
-    .left-head {
+    .left-head-spacer {
       height: var(--months-h);
-      grid-column: 1 / -1;
+    }
+
+    .left-col-head-row,
+    .left-row {
+      display: grid;
+      align-items: stretch;
     }
 
     .left-col-head {
-      height: var(--weeks-h);
+      height: var(--scale-h);
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 8px;
       color: #fff;
       font-size: 15px;
       font-weight: 700;
-      background: var(--teal-dark);
       border-right: 1px solid rgba(255,255,255,0.14);
+      position: relative;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+      user-select: none;
     }
 
-    .left-col-head.task {
-      background: var(--teal);
+    .left-col-head:first-child {
       border-top-left-radius: var(--radius);
       border-bottom-left-radius: 4px;
     }
 
-    .left-col-head.end {
+    .left-col-head:last-child {
       border-top-right-radius: var(--radius);
       border-bottom-right-radius: 4px;
       border-right: none;
+    }
+
+    .head-tools {
+      display: inline-flex;
+      align-items: center;
     }
 
     .cell {
@@ -199,30 +251,148 @@
       font-size: 14px;
     }
 
+    .left-row .cell:first-child { border-left: 1px solid var(--border); }
+    .left-row.first .cell:first-child { border-top-left-radius: 4px; }
+    .left-row.last .cell:first-child { border-bottom-left-radius: var(--radius); }
+    .left-row.last .cell:last-child { border-bottom-right-radius: var(--radius); }
+
     .cell.task {
+      justify-content: space-between;
+      gap: 10px;
       font-weight: 600;
-      border-left: 1px solid var(--border);
+      padding-left: 10px;
     }
 
-    .cell.date {
+    .task-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .drag-handle {
+      width: 20px;
+      text-align: center;
+      font-size: 18px;
+      line-height: 1;
+      color: #8e8e8e;
+      cursor: grab;
+      user-select: none;
+      flex: 0 0 auto;
+    }
+
+    .dragging .drag-handle { cursor: grabbing; }
+
+    .task-text-display {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cell.date,
+    .cell.progress {
       justify-content: center;
-      color: #4d4d4d;
+      color: #4a4a4a;
       font-weight: 500;
     }
 
-    .left-table .cell.first-row.task { border-top-left-radius: 4px; }
-    .left-table .cell.last-row.task { border-bottom-left-radius: var(--radius); }
-    .left-table .cell.last-row.end { border-bottom-right-radius: var(--radius); }
+    .cell.completed-date,
+    .cell.completed-date .cell-input,
+    .cell.completed-date .cell-readonly {
+      color: var(--completed-date-color);
+      font-weight: 700;
+    }
 
-    /* RIGHT CHART */
+    .cell-input,
+    .cell-readonly,
+    .progress-input-wrap {
+      width: 100%;
+      text-align: center;
+    }
+
+    .cell-readonly {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .cell-input {
+      border: 0;
+      background: transparent;
+      outline: none;
+      font: inherit;
+      color: inherit;
+      padding: 0;
+    }
+
+    .cell.task .cell-input {
+      text-align: left;
+    }
+
+    .progress-input-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .progress-input {
+      width: 46px;
+      text-align: right;
+    }
+
+    .task-tools {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .tiny-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      cursor: pointer;
+      font-weight: 700;
+      background: #fff;
+    }
+
+    .tiny-btn:hover { background: #fafafa; }
+    .tiny-btn.is-on {
+      border-color: #bfe7cb;
+      background: #edf9f1;
+      color: #187a39;
+    }
+
+    .type-select {
+      min-width: 82px;
+      padding: 0 8px;
+      min-height: 34px;
+      border-radius: 10px;
+      border: 1px solid #dcdcdc;
+      background: #fff;
+      font: 700 12px var(--font);
+    }
+
+    .delete-btn {
+      color: #b33c34;
+    }
+
     .right-chart {
       position: relative;
       min-width: fit-content;
     }
 
-    .months {
+    .months,
+    .scale,
+    .grid {
       display: grid;
-      grid-template-columns: repeat(var(--week-count), var(--week-w));
+    }
+
+    .months {
       height: var(--months-h);
       overflow: hidden;
       border-top-left-radius: var(--radius);
@@ -238,37 +408,35 @@
       font-weight: 700;
       border-right: 1px solid rgba(255,255,255,0.12);
       letter-spacing: .1px;
+      white-space: nowrap;
     }
 
     .month-block:last-child { border-right: 0; }
 
-    .weeks {
-      display: grid;
-      grid-template-columns: repeat(var(--week-count), var(--week-w));
-      height: var(--weeks-h);
+    .scale {
+      height: var(--scale-h);
       border-left: 1px solid var(--border);
       border-right: 1px solid var(--border);
       background: #fff;
     }
 
-    .week-cell {
+    .scale-cell {
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 14px;
-      color: #3d3d3d;
+      color: #3c3c3c;
       background: #fbfbfb;
       border-right: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
+      user-select: none;
+      white-space: nowrap;
     }
 
-    .week-cell:last-child { border-right: 0; }
+    .scale-cell:last-child { border-right: 0; }
 
     .grid {
       position: relative;
-      display: grid;
-      grid-template-columns: repeat(var(--week-count), var(--week-w));
-      grid-template-rows: repeat(var(--row-count), var(--row-h));
       border-left: 1px solid var(--border);
       border-right: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
@@ -293,23 +461,25 @@
       pointer-events: none;
     }
 
-    .bar {
+    .bar-track {
       position: absolute;
       height: 20px;
       border-radius: 5px;
       top: 0;
       box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+      overflow: hidden;
     }
 
-    .bar.red { background: var(--bar-red); }
-    .bar.yellow { background: var(--bar-yellow); }
-    .bar.custom {
-      background: var(--bar-color, var(--bar-red));
+    .bar-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      border-radius: 5px;
     }
 
     .milestone {
       position: absolute;
-      color: var(--bar-red);
       font-size: 30px;
       font-weight: 800;
       line-height: 1;
@@ -318,393 +488,769 @@
       font-family: Arial, Helvetica, sans-serif;
     }
 
-    .legend {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-top: 8px;
+    .drop-target {
+      box-shadow: inset 0 3px 0 var(--teal);
+    }
+
+    .left-row.dragging {
+      opacity: 0.45;
+    }
+
+    .help-inline {
       color: var(--muted);
       font-size: 13px;
     }
 
-    .legend-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .legend-dot {
-      width: 18px;
-      height: 10px;
-      border-radius: 4px;
-      display: inline-block;
-    }
-
-    .clean .toolbar,
-    .clean .config,
-    .clean .legend,
-    .clean .footer-note {
+    .mode-image .toolbar,
+    .mode-image .options-bar,
+    .mode-image .edit-only {
       display: none !important;
     }
 
-    .footer-note {
-      color: var(--muted);
-      font-size: 12px;
+    .mode-image body,
+    .mode-image {
+      padding-top: 8px;
     }
 
-    @media (max-width: 920px) {
-      body { padding: 14px; }
-      .gantt {
-        gap: 12px;
-      }
+    .mode-image .stage {
+      padding: 0;
+      border-radius: 0;
+      box-shadow: none;
+      background: transparent;
+    }
+
+    .hint-line {
+      color: var(--muted);
+      font-size: 12px;
+      padding-left: 2px;
+    }
+
+    @media (max-width: 940px) {
+      body { padding: 12px; }
+      .gantt { gap: 12px; }
+      .toolbar { justify-content: flex-start; }
     }
   </style>
 </head>
 <body>
-  <div class="app" id="appRoot">
-    <div class="toolbar">
-      <button class="btn primary" id="renderBtn">Renderizar</button>
-      <button class="btn" id="exampleBtn">Cargar ejemplo</button>
-      <button class="btn" id="toggleConfigBtn">Mostrar/Ocultar editor</button>
-      <button class="btn" id="cleanBtn">Modo limpio</button>
-      <div class="tip">Un único HTML. Edita el JSON y vuelve a renderizar.</div>
-    </div>
-
-    <details class="config" open id="configPanel">
-      <summary>
-        <div class="summary-line">
-          <span>Datos del diagrama</span>
-          <span>Formato: rango + tareas. Soporta barras y hitos.</span>
-        </div>
-      </summary>
-      <textarea id="jsonInput" spellcheck="false"></textarea>
-      <div class="error" id="errorBox"></div>
-    </details>
-
-    <div class="stage">
-      <div class="gantt-wrap">
-        <div class="gantt" id="ganttRoot"></div>
-      </div>
-      <div class="legend">
-        <span class="legend-chip"><span class="legend-dot" style="background: var(--bar-red)"></span> Barra roja</span>
-        <span class="legend-chip"><span class="legend-dot" style="background: var(--bar-yellow)"></span> Barra amarilla</span>
-        <span class="legend-chip"><span style="color: var(--bar-red); font-size: 20px; line-height: 1; transform: rotate(7deg); display:inline-block;">✓</span> Hito</span>
-      </div>
-    </div>
-
-    <div class="footer-note">Nota: el resultado está ajustado al estilo de la captura, con la misma composición, cabeceras, barras redondeadas y rejilla semanal.</div>
-  </div>
+  <div class="app" id="app"></div>
 
   <script>
-    const defaultData = {
+    const STORAGE_KEY = 'gantt-visual-editor-v2';
+    const UNIT_WIDTH = { week: 46, day: 34 };
+    const COLUMN_META = {
+      task: { label: 'Tasca', width: 290, headerKey: 'task' },
+      start: { label: 'Inici', width: 112, headerKey: 'start' },
+      end: { label: 'Finalització', width: 112, headerKey: 'end' },
+      progress: { label: 'Progrès', width: 96, headerKey: 'progress' }
+    };
+
+    const defaultState = {
+      mode: 'edit',
       locale: 'ca-ES',
-      rangeStart: '2026-03-02',
-      rangeEnd: '2026-05-31',
-      monthsColorCycle: ['#12a8c9', '#0e5674', '#12a8c9'],
+      granularity: 'week',
+      viewStart: '2026-03-02',
+      viewEnd: '2026-05-31',
+      showMonthYear: false,
+      monthColors: ['#12a8c9', '#0e5674'],
+      completedDateColor: '#1c9b42',
+      headerColors: {
+        task: '#12a8c9',
+        start: '#0e5674',
+        end: '#0e5674',
+        progress: '#0e5674'
+      },
+      imageColumns: {
+        task: true,
+        start: true,
+        end: true,
+        progress: true
+      },
       tasks: [
         {
+          id: uid(),
           task: 'Preparació entorn demostració',
           start: '2026-03-02',
           end: '2026-03-27',
+          progress: 100,
+          completed: false,
           type: 'bar',
-          color: 'red'
+          color: '#ff5a4d'
         },
         {
+          id: uid(),
           task: '(*) Kick off i demostració del circuit',
           start: '2026-03-27',
           end: '2026-03-27',
+          progress: 100,
+          completed: false,
           type: 'milestone',
-          color: 'red'
+          color: '#ff5a4d'
         },
         {
+          id: uid(),
           task: 'Configuració inicial a Jira (esborrany POC)',
           start: '2026-03-30',
           end: '2026-04-10',
+          progress: 100,
+          completed: false,
           type: 'bar',
-          color: 'red'
+          color: '#ff5a4d'
         },
         {
+          id: uid(),
           task: 'Iteracions',
           start: '2026-03-30',
           end: '2026-05-15',
+          progress: 100,
+          completed: false,
           type: 'bar',
-          color: 'yellow'
+          color: '#f7bd3c'
         },
         {
+          id: uid(),
           task: 'Tancament i documentació',
           start: '2026-05-04',
           end: '2026-05-15',
+          progress: 100,
+          completed: false,
           type: 'bar',
-          color: 'red'
+          color: '#ff5a4d'
         },
         {
+          id: uid(),
           task: 'Entrega final del circuit',
           start: '2026-05-15',
           end: '2026-05-15',
+          progress: 100,
+          completed: false,
           type: 'milestone',
-          color: 'red'
+          color: '#ff5a4d'
         }
       ]
     };
 
-    const jsonInput = document.getElementById('jsonInput');
-    const ganttRoot = document.getElementById('ganttRoot');
-    const errorBox = document.getElementById('errorBox');
-    const appRoot = document.getElementById('appRoot');
-    const configPanel = document.getElementById('configPanel');
+    let state = loadState();
+    let dragIndex = null;
+    const app = document.getElementById('app');
 
-    jsonInput.value = JSON.stringify(defaultData, null, 2);
+    render();
 
-    document.getElementById('renderBtn').addEventListener('click', renderFromInput);
-    document.getElementById('exampleBtn').addEventListener('click', () => {
-      jsonInput.value = JSON.stringify(defaultData, null, 2);
-      renderFromInput();
-    });
-    document.getElementById('toggleConfigBtn').addEventListener('click', () => {
-      configPanel.open = !configPanel.open;
-    });
-    document.getElementById('cleanBtn').addEventListener('click', () => {
-      appRoot.classList.toggle('clean');
-    });
-
-    function renderFromInput() {
-      try {
-        const data = JSON.parse(jsonInput.value);
-        validateData(data);
-        errorBox.style.display = 'none';
-        drawGantt(data);
-      } catch (err) {
-        errorBox.textContent = err.message;
-        errorBox.style.display = 'block';
+    document.addEventListener('keydown', (event) => {
+      if (state.mode === 'image' && event.key === 'Escape') {
+        state.mode = 'edit';
+        saveState();
+        render();
       }
+    });
+
+    document.addEventListener('dblclick', () => {
+      if (state.mode === 'image') {
+        state.mode = 'edit';
+        saveState();
+        render();
+      }
+    });
+
+    function render() {
+      sanitizeState();
+      saveState();
+      document.body.classList.toggle('mode-image', state.mode === 'image');
+      document.documentElement.style.setProperty('--completed-date-color', state.completedDateColor);
+
+      const visibleColumns = getVisibleColumns();
+      const leftWidth = visibleColumns.reduce((sum, key) => sum + COLUMN_META[key].width, 0);
+      const timeData = buildTimeData();
+      const chartWidth = timeData.units.length * UNIT_WIDTH[state.granularity];
+
+      app.innerHTML = `
+        <div class="toolbar edit-only">
+          <div class="toolbar-group">
+            <button class="btn ${state.mode === 'edit' ? 'active' : ''}" data-action="set-mode" data-mode="edit">Modo edición</button>
+            <button class="btn ${state.mode === 'image' ? 'active' : ''}" data-action="set-mode" data-mode="image">Modo imagen</button>
+            <button class="btn primary" data-action="add-task">Añadir tarea</button>
+            <button class="btn" data-action="add-milestone">Añadir hito</button>
+          </div>
+          <div class="toolbar-group help-inline">
+            Arrastra una tarea desde el asa ⋮⋮ para reordenarla.
+          </div>
+        </div>
+
+        <div class="options-bar edit-only">
+          <div class="options-group">
+            <span class="mini-label">Calendario</span>
+            <span class="inline-date-range">
+              <input type="text" value="${escapeAttr(formatDate(state.viewStart, state.locale))}" data-setting="viewStart" aria-label="Inicio del calendario" />
+              <span>→</span>
+              <input type="text" value="${escapeAttr(formatDate(state.viewEnd, state.locale))}" data-setting="viewEnd" aria-label="Fin del calendario" />
+            </span>
+            <select class="select" data-setting="granularity" aria-label="Granularidad">
+              <option value="week" ${state.granularity === 'week' ? 'selected' : ''}>Semana</option>
+              <option value="day" ${state.granularity === 'day' ? 'selected' : ''}>Día</option>
+            </select>
+            <label class="toggle-pill"><input type="checkbox" data-setting="showMonthYear" ${state.showMonthYear ? 'checked' : ''}/> Mostrar año en meses</label>
+          </div>
+
+          <div class="options-group">
+            <span class="mini-label">Meses</span>
+            <label class="chip">Color 1 <input class="color-swatch" type="color" value="${escapeAttr(state.monthColors[0])}" data-setting="monthColor0" /></label>
+            <label class="chip">Color 2 <input class="color-swatch" type="color" value="${escapeAttr(state.monthColors[1])}" data-setting="monthColor1" /></label>
+            <label class="chip">Fechas completadas <input class="color-swatch" type="color" value="${escapeAttr(state.completedDateColor)}" data-setting="completedDateColor" /></label>
+          </div>
+
+          <div class="options-group">
+            <span class="mini-label">Columnas visibles en imagen</span>
+            ${Object.keys(COLUMN_META).map((key) => `
+              <label class="toggle-pill"><input type="checkbox" data-column-toggle="${key}" ${state.imageColumns[key] ? 'checked' : ''}/> ${COLUMN_META[key].label}</label>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="gantt-wrap">
+            <div class="gantt" id="ganttRoot" style="grid-template-columns: ${leftWidth > 0 ? `${leftWidth}px` : '0px'} ${chartWidth}px;">
+              ${leftWidth > 0 ? buildLeftTableHtml(visibleColumns) : '<div class="left-table" style="width:0"></div>'}
+              ${buildRightChartHtml(timeData)}
+            </div>
+          </div>
+        </div>
+      `;
+
+      bindEvents();
     }
 
-    function validateData(data) {
-      if (!data || typeof data !== 'object') throw new Error('El JSON no es válido.');
-      if (!data.rangeStart || !data.rangeEnd) throw new Error('Faltan rangeStart o rangeEnd.');
-      if (!Array.isArray(data.tasks) || !data.tasks.length) throw new Error('Debes indicar al menos una tarea en tasks.');
-      const start = parseISODate(data.rangeStart);
-      const end = parseISODate(data.rangeEnd);
-      if (Number.isNaN(start) || Number.isNaN(end)) throw new Error('rangeStart o rangeEnd tienen una fecha inválida.');
-      if (start > end) throw new Error('rangeStart no puede ser posterior a rangeEnd.');
-      data.tasks.forEach((task, index) => {
-        if (!task.task) throw new Error(`La tarea ${index + 1} no tiene texto en "task".`);
-        if (!task.start || !task.end) throw new Error(`La tarea "${task.task}" no tiene start o end.`);
-        const ts = parseISODate(task.start);
-        const te = parseISODate(task.end);
-        if (Number.isNaN(ts) || Number.isNaN(te)) throw new Error(`La tarea "${task.task}" tiene fechas inválidas.`);
-        if (ts > te) throw new Error(`La tarea "${task.task}" tiene start posterior a end.`);
-      });
+    function buildLeftTableHtml(visibleColumns) {
+      const columnsTemplate = visibleColumns.map((key) => `${COLUMN_META[key].width}px`).join(' ');
+      return `
+        <div class="left-table" style="width:${visibleColumns.reduce((sum, key) => sum + COLUMN_META[key].width, 0)}px;">
+          <div class="left-head-spacer"></div>
+          <div class="left-col-head-row" style="grid-template-columns:${columnsTemplate};">
+            ${visibleColumns.map((key) => `
+              <div class="left-col-head" style="background:${escapeAttr(state.headerColors[COLUMN_META[key].headerKey])};">
+                <span>${COLUMN_META[key].label}</span>
+                ${state.mode === 'edit' ? `<span class="head-tools"><input class="head-color-input" type="color" value="${escapeAttr(state.headerColors[COLUMN_META[key].headerKey])}" data-header-color="${COLUMN_META[key].headerKey}" /></span>` : ''}
+              </div>
+            `).join('')}
+          </div>
+          ${state.tasks.map((task, index) => buildLeftRowHtml(task, index, visibleColumns, columnsTemplate)).join('')}
+        </div>
+      `;
     }
 
-    function drawGantt(data) {
-      const locale = data.locale || 'ca-ES';
-      const rangeStart = startOfWeek(parseISODate(data.rangeStart));
-      const rangeEnd = endOfWeek(parseISODate(data.rangeEnd));
-      const weeks = buildWeeks(rangeStart, rangeEnd);
-      const months = groupMonths(weeks, locale, data.monthsColorCycle || ['#12a8c9', '#0e5674', '#12a8c9']);
-      const rowCount = data.tasks.length;
-
-      ganttRoot.style.setProperty('--week-count', String(weeks.length));
-      ganttRoot.style.setProperty('--row-count', String(rowCount));
-
-      const leftTable = buildLeftTable(data.tasks, locale);
-      const rightChart = buildRightChart(data, weeks, months, rangeStart, rowCount);
-
-      ganttRoot.innerHTML = '';
-      ganttRoot.appendChild(leftTable);
-      ganttRoot.appendChild(rightChart);
+    function buildLeftRowHtml(task, index, visibleColumns, columnsTemplate) {
+      const first = index === 0 ? 'first' : '';
+      const last = index === state.tasks.length - 1 ? 'last' : '';
+      return `
+        <div class="left-row ${first} ${last}" style="grid-template-columns:${columnsTemplate};" draggable="${state.mode === 'edit' ? 'true' : 'false'}" data-row-index="${index}">
+          ${visibleColumns.map((key) => buildCellHtml(task, index, key)).join('')}
+        </div>
+      `;
     }
 
-    function buildLeftTable(tasks, locale) {
-      const left = document.createElement('div');
-      left.className = 'left-table';
+    function buildCellHtml(task, index, key) {
+      if (key === 'task') {
+        if (state.mode === 'edit') {
+          return `
+            <div class="cell task">
+              <div class="task-main">
+                <span class="drag-handle edit-only" title="Arrastrar">⋮⋮</span>
+                <input class="cell-input" type="text" value="${escapeAttr(task.task)}" data-task-field="task" data-index="${index}" aria-label="Texto de la tarea" />
+              </div>
+              <div class="task-tools edit-only">
+                <input class="task-color-input" type="color" value="${escapeAttr(task.color)}" data-task-color="${index}" title="Color de la barra" />
+                <select class="type-select" data-task-type="${index}" aria-label="Tipo de elemento">
+                  <option value="bar" ${task.type === 'bar' ? 'selected' : ''}>Barra</option>
+                  <option value="milestone" ${task.type === 'milestone' ? 'selected' : ''}>Hito</option>
+                </select>
+                <button class="tiny-btn ${task.completed ? 'is-on' : ''}" data-toggle-complete="${index}" title="Marcar completada">✓</button>
+                <button class="tiny-btn delete-btn" data-delete-task="${index}" title="Eliminar">✕</button>
+              </div>
+            </div>
+          `;
+        }
+        return `<div class="cell task"><div class="task-text-display">${escapeHtml(task.task)}</div></div>`;
+      }
 
-      const spacer = document.createElement('div');
-      spacer.className = 'left-head';
-      left.appendChild(spacer);
+      if (key === 'start' || key === 'end') {
+        const completedClass = task.completed ? 'completed-date' : '';
+        if (state.mode === 'edit') {
+          return `
+            <div class="cell date ${completedClass}">
+              <input class="cell-input" type="text" value="${escapeAttr(formatDate(task[key], state.locale))}" data-task-field="${key}" data-index="${index}" aria-label="${key === 'start' ? 'Fecha de inicio' : 'Fecha de finalización'}" />
+            </div>
+          `;
+        }
+        return `<div class="cell date ${completedClass}"><span class="cell-readonly">${escapeHtml(formatDate(task[key], state.locale))}</span></div>`;
+      }
 
-      const thTask = document.createElement('div');
-      thTask.className = 'left-col-head task';
-      thTask.textContent = 'Tasca';
+      if (key === 'progress') {
+        if (state.mode === 'edit') {
+          const disabled = task.type === 'milestone' ? 'disabled' : '';
+          return `
+            <div class="cell progress">
+              <span class="progress-input-wrap">
+                <input class="cell-input progress-input" type="number" min="0" max="100" step="1" value="${task.progress}" data-task-field="progress" data-index="${index}" ${disabled} aria-label="Porcentaje de progreso" />
+                <span>%</span>
+              </span>
+            </div>
+          `;
+        }
+        return `<div class="cell progress"><span class="cell-readonly">${task.type === 'milestone' ? '—' : `${clamp(task.progress, 0, 100)}%`}</span></div>`;
+      }
 
-      const thStart = document.createElement('div');
-      thStart.className = 'left-col-head';
-      thStart.textContent = 'Inici';
-
-      const thEnd = document.createElement('div');
-      thEnd.className = 'left-col-head end';
-      thEnd.textContent = 'Finalització';
-
-      left.appendChild(thTask);
-      left.appendChild(thStart);
-      left.appendChild(thEnd);
-
-      tasks.forEach((task, index) => {
-        const first = index === 0;
-        const last = index === tasks.length - 1;
-
-        const c1 = document.createElement('div');
-        c1.className = `cell task ${first ? 'first-row' : ''} ${last ? 'last-row' : ''}`.trim();
-        c1.textContent = task.task;
-
-        const c2 = document.createElement('div');
-        c2.className = `cell date ${first ? 'first-row' : ''} ${last ? 'last-row' : ''}`.trim();
-        c2.textContent = formatDate(parseISODate(task.start), locale);
-
-        const c3 = document.createElement('div');
-        c3.className = `cell date end ${first ? 'first-row' : ''} ${last ? 'last-row' : ''}`.trim();
-        c3.textContent = formatDate(parseISODate(task.end), locale);
-
-        left.appendChild(c1);
-        left.appendChild(c2);
-        left.appendChild(c3);
-      });
-
-      return left;
+      return '';
     }
 
-    function buildRightChart(data, weeks, months, gridStart, rowCount) {
-      const right = document.createElement('div');
-      right.className = 'right-chart';
+    function buildRightChartHtml(timeData) {
+      const unitWidth = UNIT_WIDTH[state.granularity];
+      const gridTemplate = `repeat(${timeData.units.length}, ${unitWidth}px)`;
+      const rowsTemplate = `repeat(${state.tasks.length}, var(--row-h))`;
 
-      const monthsRow = document.createElement('div');
-      monthsRow.className = 'months';
-      months.forEach(month => {
-        const block = document.createElement('div');
-        block.className = 'month-block';
-        block.style.gridColumn = `${month.start + 1} / span ${month.span}`;
-        block.style.background = month.color;
-        block.textContent = month.label;
-        monthsRow.appendChild(block);
-      });
+      return `
+        <div class="right-chart">
+          <div class="months" style="grid-template-columns:${gridTemplate};">
+            ${timeData.months.map((month) => `
+              <div class="month-block" style="grid-column:${month.start + 1} / span ${month.span}; background:${month.color};">${escapeHtml(month.label)}</div>
+            `).join('')}
+          </div>
+          <div class="scale" style="grid-template-columns:${gridTemplate};">
+            ${timeData.units.map((unit, i) => `
+              <div class="scale-cell ${i === timeData.units.length - 1 ? 'last' : ''}">${escapeHtml(unit.label)}</div>
+            `).join('')}
+          </div>
+          <div class="grid" style="grid-template-columns:${gridTemplate}; grid-template-rows:${rowsTemplate};">
+            ${buildGridCellsHtml(timeData.units.length, state.tasks.length)}
+            <div class="bars-layer">${buildBarsHtml(timeData)}</div>
+          </div>
+        </div>
+      `;
+    }
 
-      const weeksRow = document.createElement('div');
-      weeksRow.className = 'weeks';
-      weeks.forEach(week => {
-        const cell = document.createElement('div');
-        cell.className = 'week-cell';
-        cell.textContent = `${week.labelDay}-${week.labelMonth}`;
-        weeksRow.appendChild(cell);
-      });
-
-      const grid = document.createElement('div');
-      grid.className = 'grid';
+    function buildGridCellsHtml(colCount, rowCount) {
+      let html = '';
       for (let r = 0; r < rowCount; r += 1) {
-        for (let c = 0; c < weeks.length; c += 1) {
-          const cell = document.createElement('div');
-          cell.className = 'grid-cell';
-          if (r === rowCount - 1) cell.classList.add('row-end');
-          if (c === weeks.length - 1) cell.classList.add('col-end');
-          grid.appendChild(cell);
+        for (let c = 0; c < colCount; c += 1) {
+          html += `<div class="grid-cell ${r === rowCount - 1 ? 'row-end' : ''} ${c === colCount - 1 ? 'col-end' : ''}"></div>`;
         }
       }
-
-      const barsLayer = document.createElement('div');
-      barsLayer.className = 'bars-layer';
-      grid.appendChild(barsLayer);
-
-      requestAnimationFrame(() => {
-        placeItems(data.tasks, barsLayer, gridStart, weeks.length);
-      });
-
-      right.appendChild(monthsRow);
-      right.appendChild(weeksRow);
-      right.appendChild(grid);
-      return right;
+      return html;
     }
 
-    function placeItems(tasks, layer, gridStart, weekCount) {
-      const styles = getComputedStyle(document.documentElement);
-      const weekWidth = parseFloat(styles.getPropertyValue('--week-w'));
-      const rowHeight = parseFloat(styles.getPropertyValue('--row-h'));
-      const totalDays = weekCount * 7;
-      const totalWidth = weekCount * weekWidth;
+    function buildBarsHtml(timeData) {
+      const unitWidth = UNIT_WIDTH[state.granularity];
+      const rowHeight = 56;
+      const totalDays = diffDays(parseISODate(timeData.gridStart), addDays(parseISODate(timeData.gridEnd), 1));
+      const totalWidth = timeData.units.length * unitWidth;
       const barMarginX = 5;
 
-      layer.innerHTML = '';
-
-      tasks.forEach((task, index) => {
+      return state.tasks.map((task, index) => {
         const rowTop = (index * rowHeight) + ((rowHeight - 20) / 2);
-        const itemStart = parseISODate(task.start);
-        const itemEnd = parseISODate(task.end);
-        const startOffset = diffDays(gridStart, itemStart);
-        const endOffsetExclusive = diffDays(gridStart, addDays(itemEnd, 1));
+        const taskStart = parseISODate(task.start);
+        const taskEnd = parseISODate(task.end);
+        const startOffset = diffDays(parseISODate(timeData.gridStart), taskStart);
+        const endOffsetExclusive = diffDays(parseISODate(timeData.gridStart), addDays(taskEnd, 1));
+        const baseColor = normalizeColor(task.color || '#ff5a4d');
 
-        if ((task.type || 'bar') === 'milestone') {
-          const milestone = document.createElement('div');
-          milestone.className = 'milestone';
+        if (task.type === 'milestone') {
           const centerX = ((startOffset + 0.5) / totalDays) * totalWidth;
-          milestone.style.left = `${centerX}px`;
-          milestone.style.top = `${(index * rowHeight) + (rowHeight / 2)}px`;
-          milestone.textContent = '✓';
-          layer.appendChild(milestone);
-          return;
+          return `<div class="milestone" style="left:${centerX}px; top:${(index * rowHeight) + (rowHeight / 2)}px; color:${baseColor};">✓</div>`;
         }
 
-        const bar = document.createElement('div');
         const x = (startOffset / totalDays) * totalWidth + barMarginX;
         const width = Math.max(22, ((endOffsetExclusive - startOffset) / totalDays) * totalWidth - (barMarginX * 2));
-        const colorType = task.color === 'yellow' || task.color === 'red' ? task.color : 'custom';
+        const progress = clamp(Number(task.progress) || 0, 0, 100);
+        const fillWidth = Math.max(0, Math.min(width, width * (progress / 100)));
+        return `
+          <div class="bar-track" style="left:${x}px; top:${rowTop}px; width:${width}px; background:${toRgba(baseColor, 0.28)};">
+            <div class="bar-fill" style="width:${fillWidth}px; background:${baseColor};"></div>
+          </div>
+        `;
+      }).join('');
+    }
 
-        bar.className = `bar ${colorType}`;
-        if (colorType === 'custom' && task.color) {
-          bar.style.setProperty('--bar-color', task.color);
+    function buildTimeData() {
+      const locale = state.locale || 'ca-ES';
+      let start = parseISODate(state.viewStart);
+      let end = parseISODate(state.viewEnd);
+      if (start > end) [start, end] = [end, start];
+
+      const units = [];
+      let gridStart = start;
+      let gridEnd = end;
+
+      if (state.granularity === 'week') {
+        gridStart = startOfWeek(start);
+        gridEnd = endOfWeek(end);
+        let cursor = new Date(gridStart);
+        while (cursor <= gridEnd) {
+          units.push({
+            start: toISODate(cursor),
+            label: `${cursor.getDate()}-${cursor.getMonth() + 1}`
+          });
+          cursor = addDays(cursor, 7);
         }
-        bar.style.left = `${x}px`;
-        bar.style.top = `${rowTop}px`;
-        bar.style.width = `${width}px`;
-        layer.appendChild(bar);
-      });
-    }
-
-    function buildWeeks(start, end) {
-      const weeks = [];
-      let cursor = new Date(start);
-      while (cursor <= end) {
-        weeks.push({
-          start: new Date(cursor),
-          labelDay: String(cursor.getDate()),
-          labelMonth: String(cursor.getMonth() + 1)
-        });
-        cursor = addDays(cursor, 7);
+      } else {
+        gridStart = start;
+        gridEnd = end;
+        let cursor = new Date(gridStart);
+        while (cursor <= gridEnd) {
+          units.push({
+            start: toISODate(cursor),
+            label: String(cursor.getDate())
+          });
+          cursor = addDays(cursor, 1);
+        }
       }
-      return weeks;
-    }
 
-    function groupMonths(weeks, locale, colors) {
-      const groups = [];
-      weeks.forEach((week, index) => {
-        const monthKey = `${week.start.getFullYear()}-${week.start.getMonth()}`;
-        const monthLabel = capitalize(new Intl.DateTimeFormat(locale, { month: 'long' }).format(week.start));
-        const last = groups[groups.length - 1];
-        if (last && last.key === monthKey) {
+      const months = [];
+      units.forEach((unit, index) => {
+        const d = parseISODate(unit.start);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        const label = state.showMonthYear
+          ? capitalize(new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(d))
+          : capitalize(new Intl.DateTimeFormat(locale, { month: 'long' }).format(d));
+        const last = months[months.length - 1];
+        if (last && last.key === key) {
           last.span += 1;
         } else {
-          groups.push({
-            key: monthKey,
-            label: monthLabel,
+          months.push({
+            key,
+            label,
             start: index,
             span: 1,
-            color: colors[groups.length % colors.length]
+            color: state.monthColors[months.length % 2]
           });
         }
       });
-      return groups;
+
+      return {
+        units,
+        months,
+        gridStart: toISODate(gridStart),
+        gridEnd: toISODate(gridEnd)
+      };
     }
 
-    function formatDate(date, locale) {
-      return new Intl.DateTimeFormat(locale, {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      }).format(date);
+    function bindEvents() {
+      app.querySelectorAll('[data-action="set-mode"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.mode = btn.dataset.mode;
+          render();
+        });
+      });
+
+      const addTaskBtn = app.querySelector('[data-action="add-task"]');
+      if (addTaskBtn) {
+        addTaskBtn.addEventListener('click', () => {
+          const baseDate = state.tasks[0]?.start || state.viewStart;
+          state.tasks.push({
+            id: uid(),
+            task: 'Nova tasca',
+            start: baseDate,
+            end: addDaysISO(baseDate, 7),
+            progress: 100,
+            completed: false,
+            type: 'bar',
+            color: '#ff5a4d'
+          });
+          render();
+        });
+      }
+
+      const addMilestoneBtn = app.querySelector('[data-action="add-milestone"]');
+      if (addMilestoneBtn) {
+        addMilestoneBtn.addEventListener('click', () => {
+          const baseDate = state.tasks[state.tasks.length - 1]?.end || state.viewStart;
+          state.tasks.push({
+            id: uid(),
+            task: 'Nou hito',
+            start: baseDate,
+            end: baseDate,
+            progress: 100,
+            completed: false,
+            type: 'milestone',
+            color: '#ff5a4d'
+          });
+          render();
+        });
+      }
+
+      app.querySelectorAll('[data-setting]').forEach((input) => {
+        const key = input.dataset.setting;
+        const applySetting = () => {
+          if (key === 'showMonthYear') {
+            state.showMonthYear = input.checked;
+          } else if (key === 'granularity') {
+            state.granularity = input.value;
+          } else if (key === 'monthColor0') {
+            state.monthColors[0] = input.value;
+          } else if (key === 'monthColor1') {
+            state.monthColors[1] = input.value;
+          } else if (key === 'completedDateColor') {
+            state.completedDateColor = input.value;
+          } else if (key === 'viewStart' || key === 'viewEnd') {
+            const parsed = parseFlexibleDate(input.value);
+            if (parsed) {
+              state[key] = parsed;
+              input.value = formatDate(parsed, state.locale);
+            } else {
+              input.value = formatDate(state[key], state.locale);
+            }
+          }
+          render();
+        };
+
+        if (input.type === 'checkbox' || input.type === 'color' || input.tagName === 'SELECT') {
+          input.addEventListener('change', applySetting);
+        } else {
+          input.addEventListener('blur', applySetting);
+          input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              input.blur();
+            }
+          });
+        }
+      });
+
+      app.querySelectorAll('[data-column-toggle]').forEach((checkbox) => {
+        checkbox.addEventListener('change', () => {
+          state.imageColumns[checkbox.dataset.columnToggle] = checkbox.checked;
+          render();
+        });
+      });
+
+      app.querySelectorAll('[data-header-color]').forEach((input) => {
+        input.addEventListener('input', () => {
+          state.headerColors[input.dataset.headerColor] = input.value;
+          render();
+        });
+      });
+
+      app.querySelectorAll('[data-task-field]').forEach((input) => {
+        const index = Number(input.dataset.index);
+        const field = input.dataset.taskField;
+        const commit = () => {
+          if (!state.tasks[index]) return;
+          if (field === 'task') {
+            state.tasks[index].task = input.value.trim() || 'Sense títol';
+          } else if (field === 'start' || field === 'end') {
+            const parsed = parseFlexibleDate(input.value);
+            if (parsed) {
+              state.tasks[index][field] = parsed;
+              normalizeTaskDates(index);
+            }
+          } else if (field === 'progress') {
+            state.tasks[index].progress = clamp(Number(input.value) || 0, 0, 100);
+          }
+          render();
+        };
+
+        if (field === 'task') {
+          input.addEventListener('blur', commit);
+          input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              input.blur();
+            }
+          });
+        } else if (field === 'progress') {
+          input.addEventListener('change', commit);
+          input.addEventListener('blur', commit);
+        } else {
+          input.addEventListener('blur', commit);
+          input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              input.blur();
+            }
+          });
+        }
+      });
+
+      app.querySelectorAll('[data-task-color]').forEach((input) => {
+        input.addEventListener('input', () => {
+          const index = Number(input.dataset.taskColor);
+          if (!state.tasks[index]) return;
+          state.tasks[index].color = input.value;
+          render();
+        });
+      });
+
+      app.querySelectorAll('[data-task-type]').forEach((select) => {
+        select.addEventListener('change', () => {
+          const index = Number(select.dataset.taskType);
+          if (!state.tasks[index]) return;
+          state.tasks[index].type = select.value;
+          if (select.value === 'milestone') {
+            state.tasks[index].end = state.tasks[index].start;
+            state.tasks[index].progress = 100;
+          }
+          render();
+        });
+      });
+
+      app.querySelectorAll('[data-toggle-complete]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const index = Number(button.dataset.toggleComplete);
+          if (!state.tasks[index]) return;
+          state.tasks[index].completed = !state.tasks[index].completed;
+          render();
+        });
+      });
+
+      app.querySelectorAll('[data-delete-task]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const index = Number(button.dataset.deleteTask);
+          state.tasks.splice(index, 1);
+          if (!state.tasks.length) {
+            state.tasks.push({
+              id: uid(),
+              task: 'Nova tasca',
+              start: state.viewStart,
+              end: addDaysISO(state.viewStart, 7),
+              progress: 100,
+              completed: false,
+              type: 'bar',
+              color: '#ff5a4d'
+            });
+          }
+          render();
+        });
+      });
+
+      if (state.mode === 'edit') {
+        app.querySelectorAll('.left-row').forEach((row) => {
+          row.addEventListener('dragstart', () => {
+            dragIndex = Number(row.dataset.rowIndex);
+            row.classList.add('dragging');
+          });
+          row.addEventListener('dragend', () => {
+            dragIndex = null;
+            app.querySelectorAll('.left-row').forEach((r) => r.classList.remove('dragging', 'drop-target'));
+          });
+          row.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            if (dragIndex === null) return;
+            app.querySelectorAll('.left-row').forEach((r) => r.classList.remove('drop-target'));
+            row.classList.add('drop-target');
+          });
+          row.addEventListener('drop', (event) => {
+            event.preventDefault();
+            const targetIndex = Number(row.dataset.rowIndex);
+            if (dragIndex === null || dragIndex === targetIndex) return;
+            const moved = state.tasks.splice(dragIndex, 1)[0];
+            state.tasks.splice(targetIndex, 0, moved);
+            dragIndex = null;
+            render();
+          });
+        });
+      }
+    }
+
+    function getVisibleColumns() {
+      if (state.mode === 'edit') return ['task', 'start', 'end', 'progress'];
+      const selected = ['task', 'start', 'end', 'progress'].filter((key) => state.imageColumns[key]);
+      return selected;
+    }
+
+    function normalizeTaskDates(index) {
+      const task = state.tasks[index];
+      if (!task) return;
+      const start = parseISODate(task.start);
+      const end = parseISODate(task.end);
+      if (start > end) {
+        const current = task.start;
+        task.start = task.end;
+        task.end = current;
+      }
+      if (task.type === 'milestone') {
+        task.end = task.start;
+        task.progress = 100;
+      }
+    }
+
+    function sanitizeState() {
+      if (!Array.isArray(state.monthColors) || state.monthColors.length < 2) state.monthColors = ['#12a8c9', '#0e5674'];
+      if (!state.headerColors) state.headerColors = { task: '#12a8c9', start: '#0e5674', end: '#0e5674', progress: '#0e5674' };
+      if (!state.imageColumns) state.imageColumns = { task: true, start: true, end: true, progress: true };
+      if (!Array.isArray(state.tasks) || !state.tasks.length) state.tasks = structuredClone(defaultState.tasks);
+      state.tasks = state.tasks.map((task) => ({
+        id: task.id || uid(),
+        task: task.task || 'Sense títol',
+        start: parseFlexibleDate(task.start) || state.viewStart,
+        end: parseFlexibleDate(task.end) || parseFlexibleDate(task.start) || state.viewStart,
+        progress: clamp(Number(task.progress ?? 100), 0, 100),
+        completed: Boolean(task.completed),
+        type: task.type === 'milestone' ? 'milestone' : 'bar',
+        color: normalizeColor(task.color || '#ff5a4d')
+      }));
+      state.tasks.forEach((_, index) => normalizeTaskDates(index));
+      state.viewStart = parseFlexibleDate(state.viewStart) || defaultState.viewStart;
+      state.viewEnd = parseFlexibleDate(state.viewEnd) || defaultState.viewEnd;
+      if (parseISODate(state.viewStart) > parseISODate(state.viewEnd)) {
+        const tmp = state.viewStart;
+        state.viewStart = state.viewEnd;
+        state.viewEnd = tmp;
+      }
+      state.granularity = state.granularity === 'day' ? 'day' : 'week';
+      state.mode = state.mode === 'image' ? 'image' : 'edit';
+      state.completedDateColor = normalizeColor(state.completedDateColor || '#1c9b42');
+      state.monthColors = [normalizeColor(state.monthColors[0]), normalizeColor(state.monthColors[1])];
+      Object.keys(COLUMN_META).forEach((key) => {
+        state.headerColors[key] = normalizeColor(state.headerColors[key] || defaultState.headerColors[key]);
+        state.imageColumns[key] = Boolean(state.imageColumns[key]);
+      });
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        return { ...structuredClone(defaultState), ...JSON.parse(raw) };
+      } catch (error) {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function uid() {
+      return Math.random().toString(36).slice(2, 10);
     }
 
     function parseISODate(value) {
       const [y, m, d] = String(value).split('-').map(Number);
       return new Date(y, (m || 1) - 1, d || 1);
+    }
+
+    function parseFlexibleDate(value) {
+      if (!value) return null;
+      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) return value.trim();
+      const text = String(value).trim();
+      let match = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (match) {
+        const [, dd, mm, yyyy] = match;
+        return `${yyyy}-${pad(mm)}-${pad(dd)}`;
+      }
+      match = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (match) {
+        const [, yyyy, mm, dd] = match;
+        return `${yyyy}-${pad(mm)}-${pad(dd)}`;
+      }
+      const parsed = new Date(text);
+      if (!Number.isNaN(parsed.getTime())) return toISODate(parsed);
+      return null;
+    }
+
+    function formatDate(value, locale) {
+      return new Intl.DateTimeFormat(locale || 'ca-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(parseISODate(value));
     }
 
     function startOfWeek(date) {
@@ -724,18 +1270,61 @@
       return d;
     }
 
+    function addDaysISO(value, days) {
+      return toISODate(addDays(parseISODate(value), days));
+    }
+
     function diffDays(start, end) {
       const a = new Date(start.getFullYear(), start.getMonth(), start.getDate());
       const b = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-      const ms = b - a;
-      return Math.round(ms / 86400000);
+      return Math.round((b - a) / 86400000);
+    }
+
+    function toISODate(date) {
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+
+    function pad(value) {
+      return String(value).padStart(2, '0');
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function toRgba(color, alpha) {
+      const normalized = normalizeColor(color).replace('#', '');
+      const full = normalized.length === 3 ? normalized.split('').map((c) => c + c).join('') : normalized;
+      const r = parseInt(full.slice(0, 2), 16);
+      const g = parseInt(full.slice(2, 4), 16);
+      const b = parseInt(full.slice(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function normalizeColor(color) {
+      if (typeof color !== 'string') return '#ff5a4d';
+      const text = color.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(text)) return text;
+      if (/^#[0-9a-fA-F]{3}$/.test(text)) return text;
+      return '#ff5a4d';
     }
 
     function capitalize(text) {
       return text.charAt(0).toUpperCase() + text.slice(1);
     }
 
-    renderFromInput();
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function escapeAttr(text) {
+      return escapeHtml(text);
+    }
   </script>
 </body>
 </html>
