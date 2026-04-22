@@ -1242,6 +1242,7 @@
         state.viewStart = state.viewEnd;
         state.viewEnd = tmp;
       }
+      ensureViewCoversTasks();
       state.granularity = state.granularity === 'day' ? 'day' : 'week';
       state.mode = state.mode === 'image' ? 'image' : 'edit';
       state.optionsExpanded = Boolean(state.optionsExpanded);
@@ -1251,6 +1252,20 @@
         state.headerColors[key] = normalizeColor(state.headerColors[key] || defaultState.headerColors[key]);
         state.imageColumns[key] = Boolean(state.imageColumns[key]);
       });
+    }
+
+    function ensureViewCoversTasks() {
+      if (!state.tasks.length) return;
+      const taskStartDates = state.tasks.map((task) => parseISODate(task.start));
+      const taskEndDates = state.tasks.map((task) => parseISODate(task.end));
+      const minTaskStart = new Date(Math.min(...taskStartDates));
+      const maxTaskEnd = new Date(Math.max(...taskEndDates));
+      if (parseISODate(state.viewStart) > minTaskStart) {
+        state.viewStart = toISODate(minTaskStart);
+      }
+      if (parseISODate(state.viewEnd) < maxTaskEnd) {
+        state.viewEnd = toISODate(maxTaskEnd);
+      }
     }
 
     function loadState() {
