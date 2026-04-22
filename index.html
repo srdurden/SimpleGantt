@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gantt estilo captura</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --panel: #f7f7f7;
+      --text: #242424;
+      --muted: #5c5c5c;
+      --border: #e7e7e7;
+      --grid: #ececec;
+      --teal: #12a8c9;
+      --teal-dark: #0e5674;
+      --bar-red: #ff5a4d;
+      --bar-yellow: #f7bd3c;
+      --row-h: 56px;
+      --months-h: 36px;
+      --weeks-h: 36px;
+      --week-w: 46px;
+      --radius: 8px;
+      --left-w-task: 285px;
+      --left-w-date: 112px;
+      --left-total: calc(var(--left-w-task) + var(--left-w-date) + var(--left-w-date));
+      --chart-w: auto;
+      --shadow: 0 0 0 1px rgba(0,0,0,0.02);
+      --font: Arial, Helvetica, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      padding: 26px;
+    }
+
+    .app {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid #d7d7d7;
+      background: #fff;
+      color: #1f1f1f;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font: 700 14px var(--font);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    .btn:hover { background: #fafafa; }
+    .btn.primary {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #fff;
+    }
+    .btn.primary:hover { filter: brightness(.98); }
+
+    .tip {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .config {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .config.hidden { display: none; }
+
+    .config summary {
+      cursor: pointer;
+      font-weight: 700;
+      list-style: none;
+      user-select: none;
+    }
+
+    .config summary::-webkit-details-marker { display: none; }
+
+    .config .summary-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .config .summary-line span:last-child {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 260px;
+      resize: vertical;
+      margin-top: 14px;
+      border: 1px solid #d6d6d6;
+      border-radius: 12px;
+      padding: 14px;
+      font: 14px/1.45 Consolas, Monaco, 'Courier New', monospace;
+      background: #fbfbfb;
+      color: #1f1f1f;
+    }
+
+    .error {
+      display: none;
+      margin-top: 10px;
+      color: #c1372d;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .stage {
+      background: #fff;
+      border-radius: 16px;
+      padding: 4px;
+      overflow-x: auto;
+    }
+
+    .gantt-wrap {
+      min-width: fit-content;
+    }
+
+    .gantt {
+      display: grid;
+      grid-template-columns: var(--left-total) auto;
+      align-items: start;
+      gap: 18px;
+      min-width: fit-content;
+    }
+
+    /* LEFT TABLE */
+    .left-table {
+      width: var(--left-total);
+      display: grid;
+      grid-template-columns: var(--left-w-task) var(--left-w-date) var(--left-w-date);
+      align-content: start;
+    }
+
+    .left-head {
+      height: var(--months-h);
+      grid-column: 1 / -1;
+    }
+
+    .left-col-head {
+      height: var(--weeks-h);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      background: var(--teal-dark);
+      border-right: 1px solid rgba(255,255,255,0.14);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    }
+
+    .left-col-head.task {
+      background: var(--teal);
+      border-top-left-radius: var(--radius);
+      border-bottom-left-radius: 4px;
+    }
+
+    .left-col-head.end {
+      border-top-right-radius: var(--radius);
+      border-bottom-right-radius: 4px;
+      border-right: none;
+    }
+
+    .cell {
+      min-height: var(--row-h);
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      padding: 0 14px;
+      font-size: 14px;
+    }
+
+    .cell.task {
+      font-weight: 600;
+      border-left: 1px solid var(--border);
+    }
+
+    .cell.date {
+      justify-content: center;
+      color: #4d4d4d;
+      font-weight: 500;
+    }
+
+    .left-table .cell.first-row.task { border-top-left-radius: 4px; }
+    .left-table .cell.last-row.task { border-bottom-left-radius: var(--radius); }
+    .left-table .cell.last-row.end { border-bottom-right-radius: var(--radius); }
+
+    /* RIGHT CHART */
+    .right-chart {
+      position: relative;
+      min-width: fit-content;
+    }
+
+    .months {
+      display: grid;
+      grid-template-columns: repeat(var(--week-count), var(--week-w));
+      height: var(--months-h);
+      overflow: hidden;
+      border-top-left-radius: var(--radius);
+      border-top-right-radius: var(--radius);
+    }
+
+    .month-block {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      border-right: 1px solid rgba(255,255,255,0.12);
+      letter-spacing: .1px;
+    }
+
+    .month-block:last-child { border-right: 0; }
+
+    .weeks {
+      display: grid;
+      grid-template-columns: repeat(var(--week-count), var(--week-w));
+      height: var(--weeks-h);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .week-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #3d3d3d;
+      background: #fbfbfb;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .week-cell:last-child { border-right: 0; }
+
+    .grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(var(--week-count), var(--week-w));
+      grid-template-rows: repeat(var(--row-count), var(--row-h));
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      border-bottom-left-radius: var(--radius);
+      border-bottom-right-radius: var(--radius);
+      overflow: hidden;
+      background: #fcfcfc;
+    }
+
+    .grid-cell {
+      border-right: 1px solid var(--grid);
+      border-bottom: 1px solid var(--grid);
+      background: #fbfbfb;
+    }
+
+    .grid-cell.row-end { border-bottom: 0; }
+    .grid-cell.col-end { border-right: 0; }
+
+    .bars-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .bar {
+      position: absolute;
+      height: 20px;
+      border-radius: 5px;
+      top: 0;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+    }
+
+    .bar.red { background: var(--bar-red); }
+    .bar.yellow { background: var(--bar-yellow); }
+    .bar.custom {
+      background: var(--bar-color, var(--bar-red));
+    }
+
+    .milestone {
+      position: absolute;
+      color: var(--bar-red);
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1;
+      transform: translate(-50%, -52%) rotate(7deg);
+      text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-dot {
+      width: 18px;
+      height: 10px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .clean .toolbar,
+    .clean .config,
+    .clean .legend,
+    .clean .footer-note {
+      display: none !important;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 920px) {
+      body { padding: 14px; }
+      .gantt {
+        gap: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="appRoot">
+    <div class="toolbar">
+      <button class="btn primary" id="renderBtn">Renderizar</button>
+      <button class="btn" id="exampleBtn">Cargar ejemplo</button>
+      <button class="btn" id="toggleConfigBtn">Mostrar/Ocultar editor</button>
+      <button class="btn" id="cleanBtn">Modo limpio</button>
+      <div class="tip">Un único HTML. Edita el JSON y vuelve a renderizar.</div>
+    </div>
+
+    <details class="config" open id="configPanel">
+      <summary>
+        <div class="summary-line">
+          <span>Datos del diagrama</span>
+          <span>Formato: rango + tareas. Soporta barras y hitos.</span>
+        </div>
+      </summary>
+      <textarea id="jsonInput" spellcheck="false"></textarea>
+      <div class="error" id="errorBox"></div>
+    </details>
+
+    <div class="stage">
+      <div class="gantt-wrap">
+        <div class="gantt" id="ganttRoot"></div>
+      </div>
+      <div class="legend">
+        <span class="legend-chip"><span class="legend-dot" style="background: var(--bar-red)"></span> Barra roja</span>
+        <span class="legend-chip"><span class="legend-dot" style="background: var(--bar-yellow)"></span> Barra amarilla</span>
+        <span class="legend-chip"><span style="color: var(--bar-red); font-size: 20px; line-height: 1; transform: rotate(7deg); display:inline-block;">✓</span> Hito</span>
+      </div>
+    </div>
+
+    <div class="footer-note">Nota: el resultado está ajustado al estilo de la captura, con la misma composición, cabeceras, barras redondeadas y rejilla semanal.</div>
+  </div>
+
+  <script>
+    const defaultData = {
+      locale: 'ca-ES',
+      rangeStart: '2026-03-02',
+      rangeEnd: '2026-05-31',
+      monthsColorCycle: ['#12a8c9', '#0e5674', '#12a8c9'],
+      tasks: [
+        {
+          task: 'Preparació entorn demostració',
+          start: '2026-03-02',
+          end: '2026-03-27',
+          type: 'bar',
+          color: 'red'
+        },
+        {
+          task: '(*) Kick off i demostració del circuit',
+          start: '2026-03-27',
+          end: '2026-03-27',
+          type: 'milestone',
+          color: 'red'
+        },
+        {
+          task: 'Configuració inicial a Jira (esborrany POC)',
+          start: '2026-03-30',
+          end: '2026-04-10',
+          type: 'bar',
+          color: 'red'
+        },
+        {
+          task: 'Iteracions',
+          start: '2026-03-30',
+          end: '2026-05-15',
+          type: 'bar',
+          color: 'yellow'
+        },
+        {
+          task: 'Tancament i documentació',
+          start: '2026-05-04',
+          end: '2026-05-15',
+          type: 'bar',
+          color: 'red'
+        },
+        {
+          task: 'Entrega final del circuit',
+          start: '2026-05-15',
+          end: '2026-05-15',
+          type: 'milestone',
+          color: 'red'
+        }
+      ]
+    };
+
+    const jsonInput = document.getElementById('jsonInput');
+    const ganttRoot = document.getElementById('ganttRoot');
+    const errorBox = document.getElementById('errorBox');
+    const appRoot = document.getElementById('appRoot');
+    const configPanel = document.getElementById('configPanel');
+
+    jsonInput.value = JSON.stringify(defaultData, null, 2);
+
+    document.getElementById('renderBtn').addEventListener('click', renderFromInput);
+    document.getElementById('exampleBtn').addEventListener('click', () => {
+      jsonInput.value = JSON.stringify(defaultData, null, 2);
+      renderFromInput();
+    });
+    document.getElementById('toggleConfigBtn').addEventListener('click', () => {
+      configPanel.open = !configPanel.open;
+    });
+    document.getElementById('cleanBtn').addEventListener('click', () => {
+      appRoot.classList.toggle('clean');
+    });
+
+    function renderFromInput() {
+      try {
+        const data = JSON.parse(jsonInput.value);
+        validateData(data);
+        errorBox.style.display = 'none';
+        drawGantt(data);
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = 'block';
+      }
+    }
+
+    function validateData(data) {
+      if (!data || typeof data !== 'object') throw new Error('El JSON no es válido.');
+      if (!data.rangeStart || !data.rangeEnd) throw new Error('Faltan rangeStart o rangeEnd.');
+      if (!Array.isArray(data.tasks) || !data.tasks.length) throw new Error('Debes indicar al menos una tarea en tasks.');
+      const start = parseISODate(data.rangeStart);
+      const end = parseISODate(data.rangeEnd);
+      if (Number.isNaN(start) || Number.isNaN(end)) throw new Error('rangeStart o rangeEnd tienen una fecha inválida.');
+      if (start > end) throw new Error('rangeStart no puede ser posterior a rangeEnd.');
+      data.tasks.forEach((task, index) => {
+        if (!task.task) throw new Error(`La tarea ${index + 1} no tiene texto en "task".`);
+        if (!task.start || !task.end) throw new Error(`La tarea "${task.task}" no tiene start o end.`);
+        const ts = parseISODate(task.start);
+        const te = parseISODate(task.end);
+        if (Number.isNaN(ts) || Number.isNaN(te)) throw new Error(`La tarea "${task.task}" tiene fechas inválidas.`);
+        if (ts > te) throw new Error(`La tarea "${task.task}" tiene start posterior a end.`);
+      });
+    }
+
+    function drawGantt(data) {
+      const locale = data.locale || 'ca-ES';
+      const rangeStart = startOfWeek(parseISODate(data.rangeStart));
+      const rangeEnd = endOfWeek(parseISODate(data.rangeEnd));
+      const weeks = buildWeeks(rangeStart, rangeEnd);
+      const months = groupMonths(weeks, locale, data.monthsColorCycle || ['#12a8c9', '#0e5674', '#12a8c9']);
+      const rowCount = data.tasks.length;
+
+      ganttRoot.style.setProperty('--week-count', String(weeks.length));
+      ganttRoot.style.setProperty('--row-count', String(rowCount));
+
+      const leftTable = buildLeftTable(data.tasks, locale);
+      const rightChart = buildRightChart(data, weeks, months, rangeStart, rowCount);
+
+      ganttRoot.innerHTML = '';
+      ganttRoot.appendChild(leftTable);
+      ganttRoot.appendChild(rightChart);
+    }
+
+    function buildLeftTable(tasks, locale) {
+      const left = document.createElement('div');
+      left.className = 'left-table';
+
+      const spacer = document.createElement('div');
+      spacer.className = 'left-head';
+      left.appendChild(spacer);
+
+      const thTask = document.createElement('div');
+      thTask.className = 'left-col-head task';
+      thTask.textContent = 'Tasca';
+
+      const thStart = document.createElement('div');
+      thStart.className = 'left-col-head';
+      thStart.textContent = 'Inici';
+
+      const thEnd = document.createElement('div');
+      thEnd.className = 'left-col-head end';
+      thEnd.textContent = 'Finalització';
+
+      left.appendChild(thTask);
+      left.appendChild(thStart);
+      left.appendChild(thEnd);
+
+      tasks.forEach((task, index) => {
+        const first = index === 0;
+        const last = index === tasks.length - 1;
+
+        const c1 = document.createElement('div');
+        c1.className = `cell task ${first ? 'first-row' : ''} ${last ? 'last-row' : ''}`.trim();
+        c1.textContent = task.task;
+
+        const c2 = document.createElement('div');
+        c2.className = `cell date ${first ? 'first-row' : ''} ${last ? 'last-row' : ''}`.trim();
+        c2.textContent = formatDate(parseISODate(task.start), locale);
+
+        const c3 = document.createElement('div');
+        c3.className = `cell date end ${first ? 'first-row' : ''} ${last ? 'last-row' : ''}`.trim();
+        c3.textContent = formatDate(parseISODate(task.end), locale);
+
+        left.appendChild(c1);
+        left.appendChild(c2);
+        left.appendChild(c3);
+      });
+
+      return left;
+    }
+
+    function buildRightChart(data, weeks, months, gridStart, rowCount) {
+      const right = document.createElement('div');
+      right.className = 'right-chart';
+
+      const monthsRow = document.createElement('div');
+      monthsRow.className = 'months';
+      months.forEach(month => {
+        const block = document.createElement('div');
+        block.className = 'month-block';
+        block.style.gridColumn = `${month.start + 1} / span ${month.span}`;
+        block.style.background = month.color;
+        block.textContent = month.label;
+        monthsRow.appendChild(block);
+      });
+
+      const weeksRow = document.createElement('div');
+      weeksRow.className = 'weeks';
+      weeks.forEach(week => {
+        const cell = document.createElement('div');
+        cell.className = 'week-cell';
+        cell.textContent = `${week.labelDay}-${week.labelMonth}`;
+        weeksRow.appendChild(cell);
+      });
+
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      for (let r = 0; r < rowCount; r += 1) {
+        for (let c = 0; c < weeks.length; c += 1) {
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell';
+          if (r === rowCount - 1) cell.classList.add('row-end');
+          if (c === weeks.length - 1) cell.classList.add('col-end');
+          grid.appendChild(cell);
+        }
+      }
+
+      const barsLayer = document.createElement('div');
+      barsLayer.className = 'bars-layer';
+      grid.appendChild(barsLayer);
+
+      requestAnimationFrame(() => {
+        placeItems(data.tasks, barsLayer, gridStart, weeks.length);
+      });
+
+      right.appendChild(monthsRow);
+      right.appendChild(weeksRow);
+      right.appendChild(grid);
+      return right;
+    }
+
+    function placeItems(tasks, layer, gridStart, weekCount) {
+      const styles = getComputedStyle(document.documentElement);
+      const weekWidth = parseFloat(styles.getPropertyValue('--week-w'));
+      const rowHeight = parseFloat(styles.getPropertyValue('--row-h'));
+      const totalDays = weekCount * 7;
+      const totalWidth = weekCount * weekWidth;
+      const barMarginX = 5;
+
+      layer.innerHTML = '';
+
+      tasks.forEach((task, index) => {
+        const rowTop = (index * rowHeight) + ((rowHeight - 20) / 2);
+        const itemStart = parseISODate(task.start);
+        const itemEnd = parseISODate(task.end);
+        const startOffset = diffDays(gridStart, itemStart);
+        const endOffsetExclusive = diffDays(gridStart, addDays(itemEnd, 1));
+
+        if ((task.type || 'bar') === 'milestone') {
+          const milestone = document.createElement('div');
+          milestone.className = 'milestone';
+          const centerX = ((startOffset + 0.5) / totalDays) * totalWidth;
+          milestone.style.left = `${centerX}px`;
+          milestone.style.top = `${(index * rowHeight) + (rowHeight / 2)}px`;
+          milestone.textContent = '✓';
+          layer.appendChild(milestone);
+          return;
+        }
+
+        const bar = document.createElement('div');
+        const x = (startOffset / totalDays) * totalWidth + barMarginX;
+        const width = Math.max(22, ((endOffsetExclusive - startOffset) / totalDays) * totalWidth - (barMarginX * 2));
+        const colorType = task.color === 'yellow' || task.color === 'red' ? task.color : 'custom';
+
+        bar.className = `bar ${colorType}`;
+        if (colorType === 'custom' && task.color) {
+          bar.style.setProperty('--bar-color', task.color);
+        }
+        bar.style.left = `${x}px`;
+        bar.style.top = `${rowTop}px`;
+        bar.style.width = `${width}px`;
+        layer.appendChild(bar);
+      });
+    }
+
+    function buildWeeks(start, end) {
+      const weeks = [];
+      let cursor = new Date(start);
+      while (cursor <= end) {
+        weeks.push({
+          start: new Date(cursor),
+          labelDay: String(cursor.getDate()),
+          labelMonth: String(cursor.getMonth() + 1)
+        });
+        cursor = addDays(cursor, 7);
+      }
+      return weeks;
+    }
+
+    function groupMonths(weeks, locale, colors) {
+      const groups = [];
+      weeks.forEach((week, index) => {
+        const monthKey = `${week.start.getFullYear()}-${week.start.getMonth()}`;
+        const monthLabel = capitalize(new Intl.DateTimeFormat(locale, { month: 'long' }).format(week.start));
+        const last = groups[groups.length - 1];
+        if (last && last.key === monthKey) {
+          last.span += 1;
+        } else {
+          groups.push({
+            key: monthKey,
+            label: monthLabel,
+            start: index,
+            span: 1,
+            color: colors[groups.length % colors.length]
+          });
+        }
+      });
+      return groups;
+    }
+
+    function formatDate(date, locale) {
+      return new Intl.DateTimeFormat(locale, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(date);
+    }
+
+    function parseISODate(value) {
+      const [y, m, d] = String(value).split('-').map(Number);
+      return new Date(y, (m || 1) - 1, d || 1);
+    }
+
+    function startOfWeek(date) {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      return addDays(d, diff);
+    }
+
+    function endOfWeek(date) {
+      return addDays(startOfWeek(date), 6);
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function diffDays(start, end) {
+      const a = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      const b = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      const ms = b - a;
+      return Math.round(ms / 86400000);
+    }
+
+    function capitalize(text) {
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    renderFromInput();
+  </script>
+</body>
+</html>
