@@ -170,6 +170,42 @@
       cursor: pointer;
     }
 
+    .icon-color-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.34);
+      background: rgba(255,255,255,0.14);
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .icon-color-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: #fff;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+      opacity: .96;
+    }
+
+    .icon-color-btn input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
     input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
     input[type="color"]::-webkit-color-swatch,
     input[type="color"]::-moz-color-swatch {
@@ -299,10 +335,10 @@
     .left-row.last .cell:last-child { border-bottom-right-radius: var(--radius); }
 
     .cell.task {
-      justify-content: space-between;
-      gap: 10px;
+      justify-content: flex-start;
+      gap: 12px;
       font-weight: 600;
-      padding-left: 10px;
+      padding-left: 12px;
     }
 
     .task-main {
@@ -310,7 +346,15 @@
       align-items: center;
       gap: 10px;
       min-width: 0;
-      flex: 1;
+      flex: 1 1 auto;
+      overflow: hidden;
+    }
+
+    .task-tools {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
     }
 
     .drag-handle {
@@ -374,6 +418,8 @@
 
     .cell.task .cell-input {
       text-align: left;
+      min-width: 0;
+      flex: 1 1 auto;
     }
 
     .progress-input-wrap {
@@ -388,12 +434,7 @@
       text-align: right;
     }
 
-    .task-tools {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      flex: 0 0 auto;
-    }
+    
 
     .tiny-btn {
       display: inline-flex;
@@ -583,7 +624,7 @@
     const STORAGE_KEY = 'gantt-visual-editor-v4';
     const UNIT_WIDTH = { week: 46, day: 34 };
     const COLUMN_META = {
-      task: { label: 'Tasca', width: 290, headerKey: 'task' },
+      task: { label: 'Tasca', width: 460, headerKey: 'task' },
       start: { label: 'Inici', width: 112, headerKey: 'start' },
       end: { label: 'Finalització', width: 112, headerKey: 'end' },
       progress: { label: 'Progrès', width: 96, headerKey: 'progress' }
@@ -778,7 +819,7 @@
             ${visibleColumns.map((key) => `
               <div class="left-col-head" style="background:${escapeAttr(state.headerColors[COLUMN_META[key].headerKey])};">
                 <span>${COLUMN_META[key].label}</span>
-                ${state.mode === 'edit' ? `<span class="head-tools"><input class="head-color-input" type="color" value="${escapeAttr(state.headerColors[COLUMN_META[key].headerKey])}" data-header-color="${COLUMN_META[key].headerKey}" /></span>` : ''}
+                ${state.mode === 'edit' ? `<span class="head-tools"><label class="icon-color-btn" title="Cambiar color de la cabecera">${paletteIcon()}<input class="head-color-input" type="color" value="${escapeAttr(state.headerColors[COLUMN_META[key].headerKey])}" data-header-color="${COLUMN_META[key].headerKey}" aria-label="Cambiar color de la cabecera" /></label></span>` : ''}
               </div>
             `).join('')}
           </div>
@@ -803,18 +844,16 @@
         if (state.mode === 'edit') {
           return `
             <div class="cell task">
-              <div class="task-main">
-                <span class="drag-handle edit-only" title="Arrastrar">⋮⋮</span>
-                <input class="cell-input" type="text" value="${escapeAttr(task.task)}" data-task-field="task" data-index="${index}" aria-label="Texto de la tarea" />
-              </div>
               <div class="task-tools edit-only">
-                <input class="task-color-input" type="color" value="${escapeAttr(task.color)}" data-task-color="${index}" title="Color de la barra" />
+                <input class="task-color-input" type="color" value="${escapeAttr(task.color)}" data-task-color="${index}" title="Color de la barra" aria-label="Color de la barra" />
                 <select class="type-select" data-task-type="${index}" aria-label="Tipo de elemento">
                   <option value="bar" ${task.type === 'bar' ? 'selected' : ''}>Barra</option>
                   <option value="milestone" ${task.type === 'milestone' ? 'selected' : ''}>Hito</option>
                 </select>
-                <button class="tiny-btn ${task.completed ? 'is-on' : ''}" data-toggle-complete="${index}" title="Marcar completada">✓</button>
                 <button class="tiny-btn delete-btn" data-delete-task="${index}" title="Eliminar">Borrar</button>
+              </div>
+              <div class="task-main">
+                <input class="cell-input" type="text" value="${escapeAttr(task.task)}" data-task-field="task" data-index="${index}" aria-label="Texto de la tarea" />
               </div>
             </div>
           `;
@@ -1150,14 +1189,6 @@
           render();
         });
       });
-
-      app.querySelectorAll('[data-toggle-complete]').forEach((button) => {
-        button.addEventListener('click', () => {
-          const index = Number(button.dataset.toggleComplete);
-          if (!state.tasks[index]) return;
-          state.tasks[index].completed = !state.tasks[index].completed;
-          render();
-        });
       });
 
       app.querySelectorAll('[data-delete-task]').forEach((button) => {
@@ -1388,6 +1419,16 @@
 
     function capitalize(text) {
       return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    function paletteIcon() {
+      return `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 3a9 9 0 1 0 0 18h1.4a2.1 2.1 0 0 0 0-4.2h-.86a1.15 1.15 0 0 1 0-2.3H15A6 6 0 0 0 15 3h-3z"></path>
+          <circle cx="7.5" cy="10" r="1"></circle>
+          <circle cx="10" cy="7.5" r="1"></circle>
+          <circle cx="14" cy="7.5" r="1"></circle>
+        </svg>`;
     }
 
     function escapeHtml(text) {
