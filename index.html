@@ -377,6 +377,11 @@
       text-overflow: ellipsis;
     }
 
+    .mode-image .task-text-display {
+      overflow: visible;
+      text-overflow: clip;
+    }
+
     .cell.date,
     .cell.progress {
       justify-content: center;
@@ -622,7 +627,7 @@
 
   <script>
     const STORAGE_KEY = 'gantt-visual-editor-v4';
-    const UNIT_WIDTH = { week: 46, day: 34 };
+    const UNIT_WIDTH = { week: 46, day: 34, month: 92 };
     const COLUMN_META = {
       task: { label: 'Tasca', width: 460, headerKey: 'task' },
       start: { label: 'Inici', width: 112, headerKey: 'start' },
@@ -745,7 +750,7 @@
       document.documentElement.style.setProperty('--completed-date-color', state.completedDateColor);
 
       const visibleColumns = getVisibleColumns();
-      const leftWidth = visibleColumns.reduce((sum, key) => sum + COLUMN_META[key].width, 0);
+      const leftWidth = visibleColumns.reduce((sum, key) => sum + getColumnWidth(key), 0);
       const timeData = buildTimeData();
       const chartWidth = timeData.units.length * UNIT_WIDTH[state.granularity];
 
@@ -777,6 +782,7 @@
               <select class="select" data-setting="granularity" aria-label="Granularidad">
                 <option value="week" ${state.granularity === 'week' ? 'selected' : ''}>Semana</option>
                 <option value="day" ${state.granularity === 'day' ? 'selected' : ''}>Día</option>
+                <option value="month" ${state.granularity === 'month' ? 'selected' : ''}>Meses</option>
               </select>
               <label class="toggle-pill"><input type="checkbox" data-setting="showMonthYear" ${state.showMonthYear ? 'checked' : ''}/> Mostrar año en meses</label>
             </div>
@@ -810,10 +816,17 @@
       bindEvents();
     }
 
+    function getColumnWidth(key) {
+      if (key !== 'task') return COLUMN_META[key].width;
+      if (state.mode !== 'image') return COLUMN_META[key].width;
+      const longestTask = state.tasks.reduce((max, task) => Math.max(max, String(task.task || '').length), 0);
+      return Math.max(COLUMN_META[key].width, Math.min(980, 26 + (longestTask * 11)));
+    }
+
     function buildLeftTableHtml(visibleColumns) {
-      const columnsTemplate = visibleColumns.map((key) => `${COLUMN_META[key].width}px`).join(' ');
+      const columnsTemplate = visibleColumns.map((key) => `${getColumnWidth(key)}px`).join(' ');
       return `
-        <div class="left-table" style="width:${visibleColumns.reduce((sum, key) => sum + COLUMN_META[key].width, 0)}px;">
+        <div class="left-table" style="width:${visibleColumns.reduce((sum, key) => sum + getColumnWidth(key), 0)}px;">
           <div class="left-head-spacer"></div>
           <div class="left-col-head-row" style="grid-template-columns:${columnsTemplate};">
             ${visibleColumns.map((key) => `
@@ -990,6 +1003,17 @@
             label: `${cursor.getDate()}-${cursor.getMonth() + 1}`
           });
           cursor = addDays(cursor, 7);
+        }
+      } else if (state.granularity === 'month') {
+        gridStart = startOfMonth(start);
+        gridEnd = endOfMonth(end);
+        let cursor = new Date(gridStart);
+        while (cursor <= gridEnd) {
+          units.push({
+            start: toISODate(cursor),
+            label: capitalize(new Intl.DateTimeFormat(locale, { month: 'short' }).format(cursor))
+          });
+          cursor = addMonths(cursor, 1);
         }
       } else {
         gridStart = start;
@@ -1292,7 +1316,7 @@
         state.viewEnd = tmp;
       }
       ensureViewCoversTasks();
-      state.granularity = state.granularity === 'day' ? 'day' : 'week';
+      state.granularity = ['day', 'week', 'month'].includes(state.granularity) ? state.granularity : 'week';
       state.mode = state.mode === 'image' ? 'image' : 'edit';
       state.optionsExpanded = Boolean(state.optionsExpanded);
       state.completedDateColor = normalizeColor(state.completedDateColor || '#1c9b42');
@@ -1382,6 +1406,20 @@
       const d = new Date(date);
       d.setDate(d.getDate() + days);
       return d;
+    }
+
+    function addMonths(date, months) {
+      const d = new Date(date);
+      d.setMonth(d.getMonth() + months, 1);
+      return d;
+    }
+
+    function startOfMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth(), 1);
+    }
+
+    function endOfMonth(date) {
+      return new Date(date.getFullYear(), date.getMonth() + 1, 0);
     }
 
     function addDaysISO(value, days) {
