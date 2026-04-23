@@ -875,17 +875,16 @@
 
       if (key === 'progress') {
         if (state.mode === 'edit') {
-          const disabled = task.type === 'milestone' ? 'disabled' : '';
           return `
             <div class="cell progress">
               <span class="progress-input-wrap">
-                <input class="cell-input progress-input" type="number" min="0" max="100" step="1" value="${task.progress}" data-task-field="progress" data-index="${index}" ${disabled} aria-label="Porcentaje de progreso" />
+                <input class="cell-input progress-input" type="number" min="0" max="100" step="100" value="${task.progress}" data-task-field="progress" data-index="${index}" aria-label="Porcentaje de progreso" />
                 <span>%</span>
               </span>
             </div>
           `;
         }
-        return `<div class="cell progress"><span class="cell-readonly">${task.type === 'milestone' ? '—' : `${clamp(task.progress, 0, 100)}%`}</span></div>`;
+        return `<div class="cell progress"><span class="cell-readonly">${clamp(task.progress, 0, 100)}%</span></div>`;
       }
 
       return '';
@@ -1141,7 +1140,10 @@
               normalizeTaskDates(index);
             }
           } else if (field === 'progress') {
-            state.tasks[index].progress = clamp(Number(input.value) || 0, 0, 100);
+            const raw = clamp(Number(input.value) || 0, 0, 100);
+            state.tasks[index].progress = state.tasks[index].type === 'milestone'
+              ? (raw >= 100 ? 100 : 0)
+              : raw;
           }
           render();
         };
@@ -1184,11 +1186,10 @@
           state.tasks[index].type = select.value;
           if (select.value === 'milestone') {
             state.tasks[index].end = state.tasks[index].start;
-            state.tasks[index].progress = 100;
+            state.tasks[index].progress = state.tasks[index].progress >= 100 ? 100 : 0;
           }
           render();
         });
-      });
       });
 
       app.querySelectorAll('[data-delete-task]').forEach((button) => {
@@ -1258,7 +1259,7 @@
       }
       if (task.type === 'milestone') {
         task.end = task.start;
-        task.progress = 100;
+        task.progress = task.progress >= 100 ? 100 : 0;
       }
     }
 
@@ -1267,16 +1268,21 @@
       if (!state.headerColors) state.headerColors = { task: '#12a8c9', start: '#0e5674', end: '#0e5674', progress: '#0e5674' };
       if (!state.imageColumns) state.imageColumns = { task: true, start: true, end: true, progress: true };
       if (!Array.isArray(state.tasks)) state.tasks = structuredClone(defaultState.tasks);
-      state.tasks = state.tasks.map((task) => ({
-        id: task.id || uid(),
-        task: task.task || 'Sense títol',
-        start: parseFlexibleDate(task.start) || state.viewStart,
-        end: parseFlexibleDate(task.end) || parseFlexibleDate(task.start) || state.viewStart,
-        progress: clamp(Number(task.progress ?? 100), 0, 100),
-        completed: Boolean(task.completed),
-        type: task.type === 'milestone' ? 'milestone' : 'bar',
-        color: normalizeColor(task.color || '#ff5a4d')
-      }));
+      state.tasks = state.tasks.map((task) => {
+        const type = task.type === 'milestone' ? 'milestone' : 'bar';
+        const rawProgress = clamp(Number(task.progress ?? 100), 0, 100);
+        const progress = type === 'milestone' ? (rawProgress >= 100 ? 100 : 0) : rawProgress;
+        return {
+          id: task.id || uid(),
+          task: task.task || 'Sense títol',
+          start: parseFlexibleDate(task.start) || state.viewStart,
+          end: parseFlexibleDate(task.end) || parseFlexibleDate(task.start) || state.viewStart,
+          progress,
+          completed: Boolean(task.completed),
+          type,
+          color: normalizeColor(task.color || '#ff5a4d')
+        };
+      });
       state.tasks.forEach((_, index) => normalizeTaskDates(index));
       state.viewStart = parseFlexibleDate(state.viewStart) || defaultState.viewStart;
       state.viewEnd = parseFlexibleDate(state.viewEnd) || defaultState.viewEnd;
