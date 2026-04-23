@@ -340,11 +340,14 @@
       font-weight: 500;
     }
 
-    .cell.completed-date,
-    .cell.completed-date .cell-input,
-    .cell.completed-date .cell-readonly {
-      color: var(--completed-date-color);
+    .cell.completed-date {
       font-weight: 700;
+    }
+
+    .cell.date.completed-date,
+    .cell.date.completed-date .cell-input,
+    .cell.date.completed-date .cell-readonly {
+      color: var(--completed-date-color);
     }
 
     .cell-input,
@@ -577,7 +580,7 @@
   <div class="app" id="app"></div>
 
   <script>
-    const STORAGE_KEY = 'gantt-visual-editor-v2';
+    const STORAGE_KEY = 'gantt-visual-editor-v4';
     const UNIT_WIDTH = { week: 46, day: 34 };
     const COLUMN_META = {
       task: { label: 'Tasca', width: 290, headerKey: 'task' },
@@ -710,6 +713,7 @@
           <div class="toolbar-group">
             <button class="btn ${state.mode === 'edit' ? 'active' : ''}" data-action="set-mode" data-mode="edit">Modo edición</button>
             <button class="btn ${state.mode === 'image' ? 'active' : ''}" data-action="set-mode" data-mode="image">Modo imagen</button>
+            <button class="btn edit-only" data-action="reset-plan">Resetear planificación</button>
           </div>
           <div class="toolbar-group help-inline ${state.mode === 'edit' ? '' : 'edit-only'}">
             Arrastra una tarea desde el asa ⋮⋮ para reordenarla.
@@ -864,7 +868,7 @@
     function buildRightChartHtml(timeData, chartWidth) {
       const unitWidth = UNIT_WIDTH[state.granularity];
       const gridTemplate = `repeat(${timeData.units.length}, ${unitWidth}px)`;
-      const rowsTemplate = `repeat(${state.tasks.length}, var(--row-h))`;
+      const rowsTemplate = state.tasks.length ? `repeat(${state.tasks.length}, var(--row-h))` : '0px';
 
       return `
         <div class="right-chart" style="width:${chartWidth}px;">
@@ -995,6 +999,14 @@
       app.querySelectorAll('[data-action="set-mode"]').forEach((btn) => {
         btn.addEventListener('click', () => {
           state.mode = btn.dataset.mode;
+          render();
+        });
+      });
+
+      app.querySelectorAll('[data-action="reset-plan"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.tasks = [];
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
           render();
         });
       });
@@ -1223,7 +1235,7 @@
       if (!Array.isArray(state.monthColors) || state.monthColors.length < 2) state.monthColors = ['#12a8c9', '#0e5674'];
       if (!state.headerColors) state.headerColors = { task: '#12a8c9', start: '#0e5674', end: '#0e5674', progress: '#0e5674' };
       if (!state.imageColumns) state.imageColumns = { task: true, start: true, end: true, progress: true };
-      if (!Array.isArray(state.tasks) || !state.tasks.length) state.tasks = structuredClone(defaultState.tasks);
+      if (!Array.isArray(state.tasks)) state.tasks = structuredClone(defaultState.tasks);
       state.tasks = state.tasks.map((task) => ({
         id: task.id || uid(),
         task: task.task || 'Sense títol',
